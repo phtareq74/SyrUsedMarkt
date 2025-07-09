@@ -1,26 +1,38 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { fullCategories } from "@/lib/data";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
+import { fullCategories } from "@/lib/data";
 
 export default function PostAdStep1() {
+  const router = useRouter();
+  
   const [title, setTitle] = useState("");
   const [suggestedCategories, setSuggestedCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
-  const router = useRouter();
 
+  // ✅ Load from localStorage on initial render
+  useEffect(() => {
+    const saved = localStorage.getItem("postAdStep1");
+    if (saved) {
+      try {
+        const { title, category, subcategory } = JSON.parse(saved);
+        setTitle(title || "");
+        setSelectedCategory(category || "");
+        setSelectedSubcategory(subcategory || "");
+      } catch (e) {
+        console.error("Invalid saved data", e);
+      }
+    }
+  }, []);
 
-  // Get subcategories for the selected main category
   const subcategories =
     fullCategories.find((cat) => cat.name === selectedCategory)?.children || [];
 
   function findCategory() {
     const lowerTitle = title.toLowerCase();
 
-    // Flatten subcategories
     const allSubcategories = fullCategories.flatMap((cat) =>
       cat.children?.map((sub) => sub.name) ?? []
     );
@@ -38,32 +50,21 @@ export default function PostAdStep1() {
       return;
     }
 
-    console.log("Next with:", {
-      title,
-      category: selectedCategory,
-      subcategory: selectedSubcategory,
-    });
-
-      // Save selected data to localStorage
-  try {
+    // ✅ Save to localStorage
     localStorage.setItem("postAdStep1", JSON.stringify({
       title,
       category: selectedCategory,
       subcategory: selectedSubcategory,
     }));
+
     router.push("/post-ad/post-ad-details");
-  } catch (e) {
-    console.error("Failed to save to localStorage", e);
-  }
   }
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-8 text-right">
       <h1 className="text-2xl font-semibold mb-4">أضف إعلان - الخطوة الأولى</h1>
 
-      <label htmlFor="title" className="block mb-2 font-semibold">
-        العنوان
-      </label>
+      <label htmlFor="title" className="block mb-2 font-semibold">العنوان</label>
       <input
         id="title"
         type="text"
@@ -101,15 +102,13 @@ export default function PostAdStep1() {
         </div>
       )}
 
-      <label htmlFor="category" className="block mb-2 font-semibold">
-        اختر القسم
-      </label>
+      <label htmlFor="category" className="block mb-2 font-semibold">اختر القسم</label>
       <select
         id="category"
         value={selectedCategory}
         onChange={(e) => {
           setSelectedCategory(e.target.value);
-          setSelectedSubcategory(""); // reset subcategory when category changes
+          setSelectedSubcategory(""); // Reset subcategory
         }}
         className="w-full border rounded p-2 mb-4"
       >
