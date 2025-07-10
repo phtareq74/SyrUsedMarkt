@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { fullCategories } from "@/lib/data";
 
-export default function PostAdStep1() {
+export default function PostAdStep2() {
   const router = useRouter();
   
   const [title, setTitle] = useState("");

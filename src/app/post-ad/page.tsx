@@ -51,7 +51,8 @@ export default function PostAdStep1() {
       category: selectedCategory,
       subcategory: selectedSubcategory,
     }));
-    router.push("/post-ad/post-ad-details");
+    console.log("About to navigate to post-ad-details with:", { title, selectedCategory, selectedSubcategory });
+    router.push("/post-ad/post-ad-step-2");
   } catch (e) {
     console.error("Failed to save to localStorage", e);
   }
