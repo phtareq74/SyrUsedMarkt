@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { fullCategories } from "@/lib/data";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 
 export default function PostAdStep1() {
@@ -51,12 +52,25 @@ export default function PostAdStep1() {
       category: selectedCategory,
       subcategory: selectedSubcategory,
     }));
-    console.log("About to navigate to post-ad-details with:", { title, selectedCategory, selectedSubcategory });
+  
     router.push("/post-ad/post-ad-step-2");
   } catch (e) {
     console.error("Failed to save to localStorage", e);
   }
   }
+useEffect(() => {
+  const saved = localStorage.getItem("postAdStep1");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      setTitle(parsed.title || "");
+      setSelectedCategory(parsed.category || "");
+      setSelectedSubcategory(parsed.subcategory || "");
+    } catch (e) {
+      console.error("Failed to parse saved step 1 data", e);
+    }
+  }
+}, []);
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-8 text-right">

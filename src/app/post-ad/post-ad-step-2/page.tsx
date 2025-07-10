@@ -1,152 +1,209 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { fullCategories } from "@/lib/data";
+import { useRouter, usePathname } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { Plus, X } from 'lucide-react';
+import Image from 'next/image';
 
-export default function PostAdStep2() {
+export default function PostAdDetails() {
   const router = useRouter();
-  
-  const [title, setTitle] = useState("");
-  const [suggestedCategories, setSuggestedCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const pathname = usePathname();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ Load from localStorage on initial render
+  const [categoryPath, setCategoryPath] = useState<string>('غير محدد');;
+  
+useEffect(() => {
+  const saved = localStorage.getItem('postAdStep1');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed?.category && parsed?.subcategory) {
+        setCategoryPath(`${parsed.category} > ${parsed.subcategory}`);
+      } else if (parsed?.category) {
+        setCategoryPath(parsed.category);
+      }
+
+    } catch {
+      console.error('Invalid step1Data in localStorage');
+    }
+  }
+}, []);
+
+
+  // === Photos upload ===
+  const [images, setImages] = useState<File[]>([]);
+
   useEffect(() => {
-    const saved = localStorage.getItem("postAdStep1");
-    if (saved) {
+    const savedFiles = localStorage.getItem('step2Images');
+    if (savedFiles) {
       try {
-        const { title, category, subcategory } = JSON.parse(saved);
-        setTitle(title || "");
-        setSelectedCategory(category || "");
-        setSelectedSubcategory(subcategory || "");
+        const blobs = JSON.parse(savedFiles) as string[];
+        const files = blobs.map((base64: string, i) => {
+          const byteString = atob(base64.split(',')[1]);
+          const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let j = 0; j < byteString.length; j++) {
+            ia[j] = byteString.charCodeAt(j);
+          }
+          return new File([ab], `image-${i}.jpg`, { type: mimeString });
+        });
+        setImages(files);
       } catch (e) {
-        console.error("Invalid saved data", e);
+        console.error('Failed to load step2Images', e);
       }
     }
   }, []);
 
-  const subcategories =
-    fullCategories.find((cat) => cat.name === selectedCategory)?.children || [];
+  useEffect(() => {
+    const toBase64 = async (file: File) =>
+      new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
 
-  function findCategory() {
-    const lowerTitle = title.toLowerCase();
+    const storeImages = async () => {
+      const base64s = await Promise.all(images.map(toBase64));
+      localStorage.setItem('step2Images', JSON.stringify(base64s));
+    };
 
-    const allSubcategories = fullCategories.flatMap((cat) =>
-      cat.children?.map((sub) => sub.name) ?? []
-    );
+    if (images.length > 0) storeImages();
+    else localStorage.removeItem('step2Images');
+  }, [images]);
 
-    const matches = allSubcategories.filter((cat) =>
-      lowerTitle.includes(cat.toLowerCase())
-    );
+  const handleAddPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const newFiles = Array.from(files).slice(0, 16 - images.length);
+    setImages([...images, ...newFiles]);
+  };
 
-    setSuggestedCategories(matches.length ? matches : allSubcategories.slice(0, 5));
-  }
+  const handleRemovePhoto = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
+  };
 
-  function handleNext() {
-    if (!title || !selectedCategory) {
-      alert("يرجى إدخال العنوان واختيار القسم");
-      return;
-    }
+  const movePhoto = (from: number, to: number) => {
+    const updated = [...images];
+    const movedItem = updated.splice(from, 1)[0];
+    updated.splice(to, 0, movedItem);
+    setImages(updated);
+  };
 
-    // ✅ Save to localStorage
-    localStorage.setItem("postAdStep1", JSON.stringify({
-      title,
-      category: selectedCategory,
-      subcategory: selectedSubcategory,
-    }));
-
-    router.push("/post-ad/post-ad-details");
-  }
+  // === Promotion ===
+  const [highlightAd, setHighlightAd] = useState(false);
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-8 text-right">
-      <h1 className="text-2xl font-semibold mb-4">أضف إعلان - الخطوة الأولى</h1>
+    <div key={pathname} className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-8 text-right space-y-8">
 
-      <label htmlFor="title" className="block mb-2 font-semibold">العنوان</label>
-      <input
-        id="title"
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="w-full border rounded p-2 mb-3"
-        placeholder="اكتب عنوان الإعلان"
-      />
+      <h1 className="text-2xl font-semibold">تفاصيل الإعلان</h1>
 
-      <button
-        onClick={findCategory}
-        className="mb-4 bg-cyan-600 text-white py-2 px-4 rounded hover:bg-cyan-700"
-      >
-        ابحث عن القسم
-      </button>
+      {/* 1. Selected Category */}
+      <section>
+        <h2 className="text-base font-semibold mb-1">القسم المختار</h2>
+        <div className="flex justify-between items-center border rounded p-3 bg-gray-50 text-sm">
+          <div className="text-gray-700">{categoryPath}</div>
 
-      {suggestedCategories.length > 0 && (
-        <div className="mb-4">
-          <p className="mb-1 font-semibold">الأقسام المقترحة:</p>
-          <div className="flex gap-2 flex-wrap">
-            {suggestedCategories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedSubcategory(cat)}
-                className={`px-3 py-1 rounded border ${
-                  selectedSubcategory === cat
-                    ? "bg-cyan-700 text-white border-cyan-700"
-                    : "border-gray-300 hover:bg-gray-100"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <label htmlFor="category" className="block mb-2 font-semibold">اختر القسم</label>
-      <select
-        id="category"
-        value={selectedCategory}
-        onChange={(e) => {
-          setSelectedCategory(e.target.value);
-          setSelectedSubcategory(""); // Reset subcategory
-        }}
-        className="w-full border rounded p-2 mb-4"
-      >
-        <option value="">-- اختر القسم --</option>
-        {fullCategories.map((cat) => (
-          <option key={cat.name} value={cat.name}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
-
-      {subcategories.length > 0 && (
-        <>
-          <label htmlFor="subcategory" className="block mb-2 font-semibold">
-            اختر القسم الفرعي
-          </label>
-          <select
-            id="subcategory"
-            value={selectedSubcategory}
-            onChange={(e) => setSelectedSubcategory(e.target.value)}
-            className="w-full border rounded p-2 mb-4"
+          <button
+            className="text-cyan-700 font-semibold hover:underline text-sm"
+            onClick={() => router.push('/post-ad')}
           >
-            <option value="">-- اختر القسم الفرعي --</option>
-            {subcategories.map((sub) => (
-              <option key={sub.name} value={sub.name}>
-                {sub.name}
-              </option>
-            ))}
-          </select>
-        </>
-      )}
+            تغيير
+          </button>
+        </div>
+      </section>
 
-      <button
-        onClick={handleNext}
-        className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2 rounded font-semibold"
-      >
-        التالي
-      </button>
+      <hr />
+
+      {/* 2. Upload Photos */}
+      <section>
+        <h2 className="text-base font-semibold mb-2">صور المنتج</h2>
+        <p className="text-sm text-gray-600 mb-3">يمكنك رفع حتى 16 صورة.</p>
+
+        <div className="flex flex-wrap gap-3 mb-3">
+          {images.map((img, index) => (
+            <div key={index} className="relative w-24 h-24 border rounded overflow-hidden group">
+              <Image
+                src={URL.createObjectURL(img)}
+                alt={`photo-${index}`}
+                fill
+                className="object-cover"
+              />
+              <button
+                onClick={() => handleRemovePhoto(index)}
+                className="absolute top-1 left-1 bg-black bg-opacity-60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100"
+              >
+                <X size={14} />
+              </button>
+              {index > 0 && (
+                <button
+                  className="absolute bottom-1 right-1 text-xs bg-white bg-opacity-80 px-1 rounded"
+                  onClick={() => movePhoto(index, index - 1)}
+                >
+                  ←
+                </button>
+              )}
+              {index < images.length - 1 && (
+                <button
+                  className="absolute bottom-1 left-1 text-xs bg-white bg-opacity-80 px-1 rounded"
+                  onClick={() => movePhoto(index, index + 1)}
+                >
+                  →
+                </button>
+              )}
+            </div>
+          ))}
+
+          {images.length < 16 && (
+            <button
+              className="w-24 h-24 border-2 border-dashed border-gray-300 flex items-center justify-center rounded hover:bg-gray-50"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Plus size={24} className="text-gray-400" />
+            </button>
+          )}
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleAddPhoto}
+          className="hidden"
+        />
+      </section>
+
+      <hr />
+
+      {/* 3. Promotion Option */}
+      <section>
+        <h2 className="text-base font-semibold mb-2">إعلان في الصفحة الرئيسية</h2>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={highlightAd}
+            onChange={() => setHighlightAd(!highlightAd)}
+            className="accent-cyan-600"
+          />
+          <span className="text-sm font-semibold text-cyan-700">
+            نعم، أرغب بالحصول على اهتمام إضافي
+          </span>
+          <span className="text-sm text-gray-600">(التكلفة: 100,000 ليرة سورية)</span>
+        </label>
+      </section>
+
+      <hr />
+
+      {/* Submit Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => alert('تم الانتقال للخطوة التالية')}
+          className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-6 py-2 rounded"
+        >
+          التالي
+        </button>
+      </div>
     </div>
   );
 }
