@@ -38,13 +38,7 @@ export default function PostAdStep1() {
       alert("يرجى إدخال العنوان واختيار القسم");
       return;
     }
-
-    console.log("Next with:", {
-      title,
-      category: selectedCategory,
-      subcategory: selectedSubcategory,
-    });
-
+    
       // Save selected data to localStorage
   try {
     localStorage.setItem("postAdStep1", JSON.stringify({
