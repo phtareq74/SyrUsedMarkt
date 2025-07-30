@@ -7,8 +7,16 @@ import { usePathname } from "next/navigation";
 import { getTopCategories, getSubcategoriesByName } from "@/lib/helpers";
 
 export default function SearchBox() {
-  const pathname = usePathname();
-  const showSearch = !pathname.startsWith("/post-ad");
+const pathname = usePathname();
+const showSearch = ![
+  "/post-ad",
+  "/my-ads",
+  "/myFavourites",
+  "/profile",
+  "/saved-searches",
+  "/recently-viewed",
+].some((prefix) => pathname.startsWith(prefix));
+
 
   const categorySlug = pathname.startsWith("/category")
     ? decodeURIComponent(pathname.replace("/category/", "")).split("/")

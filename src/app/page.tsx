@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
+ import Sidebar from "@/components/Sidebar";
 import CategoryDropdown from "@/components/CategoryDropdown";
 import { allProducts } from "@/lib/data";
 import ProductCard from "@/components/ProductCard";

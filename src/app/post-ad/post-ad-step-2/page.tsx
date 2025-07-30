@@ -7,6 +7,7 @@ import Image from "next/image";
 import { fullCategories, FeatureField } from "@/lib/data";
 import { allProvincies } from "@/lib/data";
 import { useSession } from "next-auth/react";
+import { saveDraft, getDraft } from "@/lib/indexedDb";
 
 export default function PostAdDetails() {
   const router = useRouter();
@@ -46,96 +47,74 @@ export default function PostAdDetails() {
   >("free");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPreview, setShowPreview] = useState(false);
+  const [adPosted, setAdPosted] = useState(false);
+
+  const handlePostAd = () => {
+    if (!validateForm()) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    // Simulate sending ad to backend
+    console.log("Posting ad to database...");
+    setAdPosted(true);
+
+    // Optionally: push to homepage
+    router.push("/");
+  };
 
   useEffect(() => {
-    const saved = localStorage.getItem("postAdStep1");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed?.category && parsed?.subcategory) {
-          setCategoryPath(`${parsed.category} > ${parsed.subcategory}`);
-        } else if (parsed?.category) {
-          setCategoryPath(parsed.category);
+    const savedStep1 = localStorage.getItem("postAdStep1");
+   
+    // const savedImages = localStorage.getItem("step2Images");
+
+    try {
+      // === Step 1 ===
+      if (savedStep1) {
+        const parsed = JSON.parse(savedStep1);
+        const category = parsed?.category;
+        const subcategory = parsed?.subcategory;
+
+        if (category && subcategory) {
+          setCategoryPath(`${category} > ${subcategory}`);
+        } else if (category) {
+          setCategoryPath(category);
         }
+
         if (parsed?.title) {
           setTitle(parsed.title);
           setCharCount(60 - parsed.title.length);
         }
-      } catch {
-        console.error("Invalid step1Data in localStorage");
-      }
-    }
-  }, []);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("postAdStep1");
-    if (!saved) return;
-
-    try {
-      const parsed = JSON.parse(saved);
-      const category = parsed?.category;
-      const subcategory = parsed?.subcategory;
-      const currentCategory = fullCategories.find(
-        (cat) => cat.name === category
-      );
-      const featuresList: FeatureField[] = currentCategory?.features || [];
-      setFeatures(featuresList);
-      if (category && subcategory) {
-        setCategoryPath(`${category} > ${subcategory}`);
-      } else if (category) {
-        setCategoryPath(category);
+        const currentCategory = fullCategories.find(
+          (cat) => cat.name === category
+        );
+        const featuresList: FeatureField[] = currentCategory?.features || [];
+        setFeatures(featuresList);
       }
 
-      if (parsed?.title) {
-        setTitle(parsed.title);
-        setCharCount(60 - parsed.title.length);
-      }
     } catch (err) {
-      console.error("Invalid localStorage data:", err);
+      console.error("Error loading saved form data:", err);
     }
   }, []);
 
-  // === Image handling ===
-  useEffect(() => {
-    const savedFiles = localStorage.getItem("step2Images");
-    if (savedFiles) {
-      try {
-        const blobs = JSON.parse(savedFiles) as string[];
-        const files = blobs.map((base64: string, i) => {
-          const byteString = atob(base64.split(",")[1]);
-          const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
-          const ab = new ArrayBuffer(byteString.length);
-          const ia = new Uint8Array(ab);
-          for (let j = 0; j < byteString.length; j++) {
-            ia[j] = byteString.charCodeAt(j);
-          }
-          return new File([ab], `image-${i}.jpg`, { type: mimeString });
-        });
-        // const saved = localStorage.getItem("postAdStep1");
+  // useEffect(() => {
+  //   const toBase64 = async (file: File) =>
+  //     new Promise<string>((resolve) => {
+  //       const reader = new FileReader();
+  //       reader.onloadend = () => resolve(reader.result as string);
+  //       reader.readAsDataURL(file);
+  //     });
 
-        setImages(files);
-      } catch (e) {
-        console.error("Failed to load step2Images", e);
-      }
-    }
-  }, []);
+  //   const storeImages = async () => {
+  //     const base64s = await Promise.all(images.map(toBase64));
+  //     localStorage.setItem("step2Images", JSON.stringify(base64s));
+  //   };
 
-  useEffect(() => {
-    const toBase64 = async (file: File) =>
-      new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-
-    const storeImages = async () => {
-      const base64s = await Promise.all(images.map(toBase64));
-      localStorage.setItem("step2Images", JSON.stringify(base64s));
-    };
-
-    if (images.length > 0) storeImages();
-    else localStorage.removeItem("step2Images");
-  }, [images]);
+  //   if (images.length > 0) storeImages();
+  //   else localStorage.removeItem("step2Images");
+  // }, [images]);
 
   const handleAddPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -208,18 +187,76 @@ export default function PostAdDetails() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  const handleNext = () => {
-    if (!validateForm()) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+  useEffect(() => {
+    getDraft("postAdDraft").then((data) => {
+      if (!data) return;
+
+      if (data.title) {
+        setTitle(data.title);
+        setCharCount(60 - data.title.length);
+      }
+      if (data.description) setDescription(data.description);
+      if (data.website) setWebsite(data.website);
+      if (data.mustGo) setMustGo(data.mustGo);
+      if (data.highlightAd) setHighlightAd(data.highlightAd);
+      if (data.askingPrice) setAskingPrice(data.askingPrice);
+      if (data.province) setProvince(data.province);
+      if (data.place) setPlace(data.place);
+      if (data.addressDetails) setAddressDetails(data.addressDetails);
+      if (data.priceType) setPriceType(data.priceType);
+      if (data.images) setImages(data.images); // blobs
+    });
+  }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const draft = {
+        title,
+        description,
+        website,
+        mustGo,
+        highlightAd,
+        askingPrice,
+        province,
+        place,
+        addressDetails,
+        priceType,
+        images, // Files or blobs
+      };
+
+      saveDraft("postAdDraft", draft);
+    }, 1000); // debounce
+
+    return () => clearTimeout(timer);
+  }, [
+    title,
+    description,
+    website,
+    mustGo,
+    highlightAd,
+    askingPrice,
+    province,
+    place,
+    addressDetails,
+    priceType,
+    images,
+  ]);
+
+  const calculateTotal = () => {
+    let total = 0;
+
+    if (mustGo) total += 10;
+    if (highlightAd) total += 5;
+
+    switch (selectedFormat) {
+      case "plus":
+        total += 7;
+        break;
+      case "premium":
+        total += 15;
+        break;
     }
 
-    localStorage.setItem(
-      "postAdStep2",
-      JSON.stringify({ title, description, website, mustGo, highlightAd })
-    );
-
-    router.push("/post-ad/post-ad-step-3");
+    return total.toFixed(2);
   };
 
   if (status === "loading") {
@@ -871,14 +908,101 @@ export default function PostAdDetails() {
       <hr />
 
       {/* Submit */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleNext}
-          className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-6 py-2 rounded"
-        >
-          التالي
-        </button>
+      <div className="mt-8 border-t pt-4">
+        <p className="text-lg font-semibold">Totaal: € {calculateTotal()}</p>
+
+        <div className="flex gap-4 mt-4">
+          <button
+            onClick={() => setShowPreview(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded"
+          >
+            راجع إعلانك
+          </button>
+
+          <button
+            onClick={handlePostAd}
+            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded"
+          >
+            أرسل الإعلان
+          </button>
+        </div>
       </div>
+
+      {/*Pop-up review*/}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-3xl w-full relative">
+            <button
+              onClick={() => setShowPreview(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-black"
+            >
+              <X size={20} />
+            </button>
+
+            <h3 className="text-xl font-bold text-center mb-4">Ad example</h3>
+            <hr className="mb-4" />
+
+            <h4 className="text-lg font-semibold">{title}</h4>
+            <p className="text-green-600 font-semibold mb-4">€{askingPrice}</p>
+            <hr className="mb-4" />
+            {/* Images */}
+            {images.length > 0 && (
+              <div className="mb-4">
+                <div className="relative w-full h-64 mb-2">
+                  <Image
+                    src={URL.createObjectURL(images[0])}
+                    alt="main-photo"
+                    fill
+                    className="object-contain rounded"
+                  />
+                </div>
+                <div className="flex gap-2 overflow-x-auto">
+                  {images.slice(1).map((img, i) => (
+                    <div key={i} className="relative w-20 h-20">
+                      <Image
+                        src={URL.createObjectURL(img)}
+                        alt={`thumb-${i}`}
+                        fill
+                        className="object-cover rounded border"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Features */}
+            {Object.keys(featureValues).length > 0 && (
+              <>
+                <h4 className="font-semibold mt-4">Features</h4>
+                <ul className="text-sm mt-1 grid grid-cols-2 gap-2">
+                  {Object.entries(featureValues).map(([key, val]) => (
+                    <li key={key}>
+                      <strong>{key}:</strong> {val}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            {/* Description */}
+            {description && (
+              <>
+                <h4 className="font-semibold mt-4">Description</h4>
+                <div
+                  className="text-sm mt-1"
+                  dangerouslySetInnerHTML={{ __html: description }}
+                />
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {adPosted && (
+        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow">
+          Your ad has been posted!
+        </div>
+      )}
     </div>
   );
 }

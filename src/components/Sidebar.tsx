@@ -9,7 +9,6 @@ import { getFiltersForCategory } from "@/lib/filtersByCategory";
 interface SidebarProps {
   readonly categoryName?: string;
 }
-
 export default function Sidebar({ categoryName }: SidebarProps) {
   const isCategoryPage = Boolean(categoryName);
 
