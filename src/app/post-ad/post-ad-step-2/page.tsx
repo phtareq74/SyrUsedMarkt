@@ -7,8 +7,7 @@ import Image from "next/image";
 import { fullCategories, FeatureField } from "@/lib/data";
 import { allProvincies } from "@/lib/data";
 import { useSession } from "next-auth/react";
-import { saveDraft, getDraft } from "@/lib/indexedDb";
-
+import { saveAd, saveDraft, getDraft, deleteDraft } from "@/lib/indexedDB";
 export default function PostAdDetails() {
   const router = useRouter();
   const pathname = usePathname();
@@ -48,25 +47,50 @@ export default function PostAdDetails() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPreview, setShowPreview] = useState(false);
-  const [adPosted, setAdPosted] = useState(false);
+  const [adPosted] = useState(false);
 
-  const handlePostAd = () => {
+  const handlePostAd = async () => {
     if (!validateForm()) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    // Simulate sending ad to backend
-    console.log("Posting ad to database...");
-    setAdPosted(true);
+    if (!session?.user?.email) {
+      alert("يرجى تسجيل الدخول أولاً.");
+      return;
+    }
 
-    // Optionally: push to homepage
-    router.push("/");
+    const adData = {
+      title,
+      description,
+      website,
+      mustGo,
+      highlightAd,
+      askingPrice,
+      province,
+      place,
+      addressDetails,
+      priceType,
+      images, // stored as File[] — make sure you handle it properly when displaying later
+      featureValues,
+      userId: session.user.email,
+      createdAt: Date.now(),
+    };
+
+    try {
+      await saveAd(adData);
+      alert("تم نشر الإعلان بنجاح!");
+      await deleteDraft("postAdDraft"); // Remove draft from IndexedDB
+      localStorage.removeItem("postAdStep1"); // ✅ Clear step 1 data from localStorage
+      router.push("/my-ads");
+    } catch (error) {
+      console.error("فشل حفظ الإعلان:", error);
+    }
   };
 
   useEffect(() => {
     const savedStep1 = localStorage.getItem("postAdStep1");
-   
+
     // const savedImages = localStorage.getItem("step2Images");
 
     try {
@@ -93,28 +117,10 @@ export default function PostAdDetails() {
         const featuresList: FeatureField[] = currentCategory?.features || [];
         setFeatures(featuresList);
       }
-
     } catch (err) {
       console.error("Error loading saved form data:", err);
     }
   }, []);
-
-  // useEffect(() => {
-  //   const toBase64 = async (file: File) =>
-  //     new Promise<string>((resolve) => {
-  //       const reader = new FileReader();
-  //       reader.onloadend = () => resolve(reader.result as string);
-  //       reader.readAsDataURL(file);
-  //     });
-
-  //   const storeImages = async () => {
-  //     const base64s = await Promise.all(images.map(toBase64));
-  //     localStorage.setItem("step2Images", JSON.stringify(base64s));
-  //   };
-
-  //   if (images.length > 0) storeImages();
-  //   else localStorage.removeItem("step2Images");
-  // }, [images]);
 
   const handleAddPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
