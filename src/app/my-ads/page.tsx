@@ -161,16 +161,17 @@ export default function MyAdsPage() {
                     )}
                     <div className="text-right">
                       <div className="font-semibold">{ad.title}</div>
-                      {(typeof ad.price === "number" ||
-                        typeof ad.price === "string") && (
-                        <div className="text-gray-600 font-medium">
-                          {ad.price} ل.س
-                        </div>
-                      )}
-                      {/* Reserve label toggle (placeholder) */}
-                      <button className="mt-1 text-xs text-yellow-600 underline">
-                        حجز / مباعة
-                      </button>
+                      <div className="flex items-center gap-3">
+                        {(typeof ad.askingPrice === "number" ||
+                          typeof ad.askingPrice === "string") && (
+                          <div className="text-gray-600 font-medium">
+                            {ad.askingPrice} ل.س
+                          </div>
+                        )}
+                        <button className="text-xs text-yellow-600 underline">
+                          حجز / مباعة
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -214,7 +215,7 @@ export default function MyAdsPage() {
                   {/* Column 6: Actions */}
                   <div className="flex flex-col items-center gap-1">
                     <Link
-                      href={`/post-ad/edit/${ad.createdAt}`}
+                      href={`/post-ad/edit/${ad.id}`}
                       className="text-blue-600 hover:underline text-xs"
                     >
                       تعديل

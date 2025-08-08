@@ -16,6 +16,8 @@ export interface DraftAdData {
 
 export interface AdData extends DraftAdData {
   id?: number;
+  title: string;
+  price?: number | string;
   userId?: string;
   createdAt?: number;
 }

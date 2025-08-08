@@ -1,0 +1,120 @@
+Folder PATH listing for volume Acer
+Volume serial number is 5C45-A31D
+C:\USERS\PUBLIC\TAREQ FOLDER\MY PROJECTS\SYRUSEDMARKT\SRC
++---app
+¦   ¦   favicon.ico
+¦   ¦   globals.css
+¦   ¦   layout.tsx
+¦   ¦   page.tsx
+¦   ¦   
+¦   +---api
+¦   ¦   +---auth
+¦   ¦       +---signup
+¦   ¦       ¦       route.ts
+¦   ¦       ¦       
+¦   ¦       +---[...nextauth]
+¦   ¦               route.ts
+¦   ¦               
+¦   +---category
+¦   ¦   +---[...categorypath]
+¦   ¦           page.tsx
+¦   ¦           
+¦   +---login
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---messages
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---my-ads
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---myFavourites
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---notifications
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---post-ad
+¦   ¦   ¦   layout.tsx
+¦   ¦   ¦   page.tsx
+¦   ¦   ¦   
+¦   ¦   +---post-ad-step-2
+¦   ¦           page.tsx
+¦   ¦           
+¦   +---product
+¦   ¦   +---[id]
+¦   ¦           page.tsx
+¦   ¦           
+¦   +---profile
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---recently-viewed
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---saved-searches
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---search
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---settings
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---signup
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---terms
+¦           page.tsx
+¦           
++---components
+¦   ¦   CategoryDropdown.tsx
+¦   ¦   FiltersPanel.tsx
+¦   ¦   ProductCard.tsx
+¦   ¦   providers.tsx
+¦   ¦   SearchBox.tsx
+¦   ¦   Sidebar.tsx
+¦   ¦   Tabs.tsx
+¦   ¦   
+¦   +---account
+¦   ¦       AccountNav.tsx
+¦   ¦       
+¦   +---layout
+¦           Footer.tsx
+¦           Header.tsx
+¦           
++---generated
+¦   +---prisma
+¦       ¦   client.d.ts
+¦       ¦   client.js
+¦       ¦   default.d.ts
+¦       ¦   default.js
+¦       ¦   edge.d.ts
+¦       ¦   edge.js
+¦       ¦   index-browser.js
+¦       ¦   index.d.ts
+¦       ¦   index.js
+¦       ¦   package.json
+¦       ¦   query_engine-windows.dll.node
+¦       ¦   schema.prisma
+¦       ¦   wasm.d.ts
+¦       ¦   wasm.js
+¦       ¦   
+¦       +---runtime
+¦               edge-esm.js
+¦               edge.js
+¦               index-browser.d.ts
+¦               index-browser.js
+¦               library.d.ts
+¦               library.js
+¦               react-native.js
+¦               wasm-compiler-edge.js
+¦               wasm-engine-edge.js
+¦               
++---lib
+        data.ts
+        filtersByCategory.ts
+        helpers.ts
+        indexedDB.ts
+        prisma.ts
+        utils.ts
+        
